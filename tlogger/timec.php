@@ -44,13 +44,14 @@ function utl_display_logs() {
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'user_time_logs';
+    $current_user_id = get_current_user_id();
     
     $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
     $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
-    $where_clause = '';
+    $where_clause = $wpdb->prepare("WHERE user_id = %d", $current_user_id);
     
     if (!empty($start_date) && !empty($end_date)) {
-        $where_clause = $wpdb->prepare("WHERE start_time BETWEEN %s AND %s", $start_date . ' 00:00:00', $end_date . ' 23:59:59');
+        $where_clause .= $wpdb->prepare(" AND start_time BETWEEN %s AND %s", $start_date . ' 00:00:00', $end_date . ' 23:59:59');
     }
 
     $results = $wpdb->get_results("SELECT * FROM $table_name $where_clause ORDER BY start_time DESC");
