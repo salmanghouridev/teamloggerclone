@@ -59,6 +59,17 @@ WP_USER = config['wordpress']['WP_USER']
 WP_APPLICATION_PASSWORD = config['wordpress']['WP_APPLICATION_PASSWORD']
 WP_MEDIA_URL = config['wordpress']['WP_MEDIA_URL']
 
+# Function to check WordPress connection and set status
+def check_wordpress_connection():
+    try:
+        response = requests.get(WP_URL, auth=(WP_USER, WP_APPLICATION_PASSWORD))
+        if response.status_code == 200:
+            online_status_label.config(text="Status: Online", fg="green")
+        else:
+            online_status_label.config(text="Status: Offline", fg="red")
+    except requests.exceptions.RequestException:
+        online_status_label.config(text="Status: Offline", fg="red")
+
 # Function to start the timer
 def start_timer():
     global start_time, current_task, current_project, is_running, next_screenshot_time
@@ -172,9 +183,7 @@ def upload_screenshot_to_wordpress(screenshot_path):
                 'caption': f'Screenshot taken on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
             }
             response = requests.post(WP_MEDIA_URL, files=media, auth=(WP_USER, WP_APPLICATION_PASSWORD))
-            if response.status_code == 201:
-                messagebox.showinfo("Success", "Screenshot uploaded successfully.")
-            else:
+            if response.status_code != 201:
                 print(f"Failed to upload screenshot: {response.text}")
                 messagebox.showerror("Error", f"Failed to upload screenshot: {response.status_code} {response.text}")
     except requests.exceptions.RequestException as e:
@@ -195,6 +204,7 @@ def update_timer():
         root.after(update_interval, update_timer)
 
 # Function to open settings window
+# Function to open settings window
 def open_settings():
     settings_window = tk.Toplevel(root)
     settings_window.title("Settings")
@@ -211,6 +221,14 @@ def open_settings():
         WP_USER = config['wordpress']['WP_USER']
         WP_APPLICATION_PASSWORD = config['wordpress']['WP_APPLICATION_PASSWORD']
         WP_MEDIA_URL = config['wordpress']['WP_MEDIA_URL']
+        check_wordpress_connection()  # Update the online status
+        
+        # Check connection and show appropriate dialog box
+        if online_status_label.cget("text") == "Status: Online":
+            messagebox.showinfo("Success", "Settings saved and connected to WordPress successfully.")
+        else:
+            messagebox.showwarning("Warning", "Settings saved but failed to connect to WordPress.")
+        
         settings_window.destroy()
 
     tk.Label(settings_window, text="WordPress URL:", font=default_font).grid(row=0, column=0, padx=10, pady=5, sticky='e')
@@ -281,5 +299,10 @@ settings_button.grid(row=8, column=0, columnspan=4, padx=10, pady=10)
 
 username_label = tk.Label(root, text=f"Username: {WP_USER}", font=default_font)
 username_label.grid(row=9, column=0, columnspan=4, padx=10, pady=5, sticky='w')
+
+online_status_label = tk.Label(root, text="Status: Offline", font=default_font, fg="red")
+online_status_label.grid(row=10, column=0, columnspan=4, padx=10, pady=5, sticky='w')
+
+check_wordpress_connection()  # Check the connection status on startup
 
 root.mainloop()
