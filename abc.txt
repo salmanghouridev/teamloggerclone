@@ -1,0 +1,2 @@
+http://wocommercetest.local/wp-json/wp/v2/media
+http://wocommercetest.local/wp-json/utl/v1/log
