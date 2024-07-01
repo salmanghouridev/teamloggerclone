@@ -17,7 +17,7 @@ current_task = None
 current_project = None
 is_running = False
 update_interval = 1000  # in milliseconds
-screenshot_intervals = [3, 12, 20, 90, 200, 900, 30, 40]  # in seconds
+screenshot_intervals = [3, 12, 20, 90, 30, 40]  # in seconds
 next_screenshot_time = None
 
 # Load configuration
@@ -26,10 +26,10 @@ if os.path.exists(CONFIG_FILE):
     config.read(CONFIG_FILE)
 else:
     config['wordpress'] = {
-        'WP_URL': 'https://demo.cutacut.co.uk/wp-json/utl/v1/log',
+        'WP_URL': 'https://retrov.cutacut.co.uk/ab/wp-json/utl/v1/log',
         'WP_USER': 'admin',
-        'WP_APPLICATION_PASSWORD': 'EWKE ZhoJ dIvW ZDmo 6lbb P3ag',
-        'WP_MEDIA_URL': 'https://demo.cutacut.co.uk/wp-json/wp/v2/media'
+        'WP_APPLICATION_PASSWORD': 'gzhu akH5 P95P 3CXI alp8 Vupu',
+        'WP_MEDIA_URL': 'https://retrov.cutacut.co.uk/ab/wp-json/wp/v2/media'
     }
     with open(CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
@@ -39,10 +39,10 @@ if 'wordpress' not in config:
     config['wordpress'] = {}
 
 wordpress_config_defaults = {
-    'WP_URL': 'https://demo.cutacut.co.uk/wp-json/utl/v1/log',
+    'WP_URL': 'https://retrov.cutacut.co.uk/ab/wp-json/utl/v1/log',
     'WP_USER': 'admin',
     'WP_APPLICATION_PASSWORD': 'EWKE ZhoJ dIvW ZDmo 6lbb P3ag',
-    'WP_MEDIA_URL': 'https://demo.cutacut.co.uk/wp-json/wp/v2/media'
+    'WP_MEDIA_URL': 'https://retrov.cutacut.co.uk/ab/wp-json/wp/v2/media'
 }
 
 for key, value in wordpress_config_defaults.items():
@@ -204,7 +204,6 @@ def update_timer():
         root.after(update_interval, update_timer)
 
 # Function to open settings window
-# Function to open settings window
 def open_settings():
     settings_window = tk.Toplevel(root)
     settings_window.title("Settings")
@@ -222,13 +221,6 @@ def open_settings():
         WP_APPLICATION_PASSWORD = config['wordpress']['WP_APPLICATION_PASSWORD']
         WP_MEDIA_URL = config['wordpress']['WP_MEDIA_URL']
         check_wordpress_connection()  # Update the online status
-        
-        # Check connection and show appropriate dialog box
-        if online_status_label.cget("text") == "Status: Online":
-            messagebox.showinfo("Success", "Settings saved and connected to WordPress successfully.")
-        else:
-            messagebox.showwarning("Warning", "Settings saved but failed to connect to WordPress.")
-        
         settings_window.destroy()
 
     tk.Label(settings_window, text="WordPress URL:", font=default_font).grid(row=0, column=0, padx=10, pady=5, sticky='e')
