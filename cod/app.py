@@ -171,8 +171,15 @@ def capture_and_upload_screenshot():
     global next_screenshot_time
     screenshot_path = f'screenshot_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png'
     ImageGrab.grab().save(screenshot_path)
+    save_screenshot_locally(screenshot_path)
     upload_screenshot_to_wordpress(screenshot_path)
     next_screenshot_time = datetime.now() + timedelta(seconds=random.choice(screenshot_intervals))
+
+# Function to save screenshot locally
+def save_screenshot_locally(screenshot_path):
+    # You can implement any additional local saving logic here if needed
+    # Currently, screenshots are already saved locally by default
+    pass
 
 # Function to upload screenshot to WordPress
 def upload_screenshot_to_wordpress(screenshot_path):
