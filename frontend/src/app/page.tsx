@@ -16,7 +16,7 @@ const UserPage: React.FC = () => {
         if (username === 'admin' && password === 'admin') {
             handleFetchUserData();
         } 
-        else if (username === 'abc' && password === 'admin') {
+        else if (username === 'retrov' && password === 'admin') {
             handleFetchUserData();
         }else {
             setError('Invalid username or password');
