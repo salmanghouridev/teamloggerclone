@@ -39,7 +39,7 @@ const UserPage: React.FC = () => {
 
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Testing</h1>
+            <h1 className="text-2xl font-bold mb-4">Testings</h1>
             <div className="mb-4">
                 <input
                     type="text"
