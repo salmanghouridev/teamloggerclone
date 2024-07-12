@@ -168,7 +168,7 @@ function utl_display_screenshots() {
     echo '</div>';
 }
 
-// Register REST API endpoint
+// Register REST API endpoints
 add_action('rest_api_init', function () {
     register_rest_route('utl/v1', '/log', array(
         'methods' => 'POST',
@@ -183,6 +183,22 @@ add_action('rest_api_init', function () {
         'callback' => 'utl_get_total_duration',
         'permission_callback' => function () {
             return is_user_logged_in();
+        }
+    ));
+    
+    register_rest_route('utl/v1', '/screenshots', array(
+        'methods' => 'GET',
+        'callback' => 'utl_get_user_screenshots',
+        'permission_callback' => function () {
+            return is_user_logged_in();
+        }
+    ));
+    
+    register_rest_route('utl/v1', '/user/(?P<username>[a-zA-Z0-9-]+)/combined', array(
+        'methods' => 'GET',
+        'callback' => 'utl_get_combined_data_by_username',
+        'permission_callback' => function () {
+            return true; // Allow public access
         }
     ));
 });
@@ -235,44 +251,71 @@ function utl_add_log($user_id, $project_name, $task_name, $start_time, $end_time
         )
     );
 }
-add_action('rest_api_init', function () {
-    register_rest_route('utl/v1', '/media', [
-        'methods' => 'POST',
-        'callback' => 'handle_screenshot_upload',
-        'permission_callback' => function () {
-            return is_user_logged_in();
-        }
-    ]);
-});
 
-function handle_screenshot_upload(WP_REST_Request $request) {
-    if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-        return new WP_Error('upload_failed', 'Upload failed.', ['status' => 400]);
+// Function to get user screenshots
+function utl_get_user_screenshots(WP_REST_Request $request) {
+    $current_user_id = get_current_user_id();
+
+    $attachments = get_posts(array(
+        'post_type' => 'attachment',
+        'posts_per_page' => -1,
+        'author' => $current_user_id,
+        'post_mime_type' => 'image',
+        'orderby' => 'post_date',
+        'order' => 'DESC',
+    ));
+
+    $screenshots = array();
+    foreach ($attachments as $attachment) {
+        $screenshots[] = array(
+            'id' => $attachment->ID,
+            'url' => wp_get_attachment_url($attachment->ID),
+            'title' => $attachment->post_title,
+            'date' => $attachment->post_date,
+        );
     }
 
-    $uploaded_file = $_FILES['file'];
-    $upload_overrides = ['test_form' => false];
-    $movefile = wp_handle_upload($uploaded_file, $upload_overrides);
-
-    if ($movefile && !isset($movefile['error'])) {
-        $filename = $movefile['file'];
-        $attachment = [
-            'guid' => $movefile['url'],
-            'post_mime_type' => $movefile['type'],
-            'post_title' => sanitize_file_name(basename($filename)),
-            'post_content' => '',
-            'post_status' => 'inherit',
-            'post_author' => get_current_user_id(), // Add author metadata
-        ];
-
-        $attach_id = wp_insert_attachment($attachment, $filename);
-
-        require_once(ABSPATH . 'wp-admin/includes/image.php');
-        $attach_data = wp_generate_attachment_metadata($attach_id, $filename);
-        wp_update_attachment_metadata($attach_id, $attach_data);
-
-        return new WP_REST_Response(['url' => $movefile['url']], 201);
-    } else {
-        return new WP_Error('upload_failed', $movefile['error'], ['status' => 500]);
-    }
+    return new WP_REST_Response($screenshots, 200);
 }
+
+// Function to get combined data by username
+function utl_get_combined_data_by_username(WP_REST_Request $request) {
+    $username = $request->get_param('username');
+    $user = get_user_by('login', $username);
+    if (!$user) {
+        return new WP_Error('no_user', 'User not found', array('status' => 404));
+    }
+
+    $user_id = $user->ID;
+    
+    // Fetch screenshots
+    $screenshots = get_posts(array(
+        'post_type' => 'attachment',
+        'posts_per_page' => -1,
+        'author' => $user_id,
+        'post_mime_type' => 'image',
+        'orderby' => 'post_date',
+        'order' => 'DESC',
+    ));
+
+    $screenshots_data = array();
+    foreach ($screenshots as $screenshot) {
+        $screenshots_data[] = array(
+            'id' => $screenshot->ID,
+            'url' => wp_get_attachment_url($screenshot->ID),
+            'title' => $screenshot->post_title,
+            'date' => $screenshot->post_date,
+        );
+    }
+
+    // Fetch time logs
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'user_time_logs';
+    $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE user_id = %d ORDER BY start_time DESC", $user_id));
+
+    return new WP_REST_Response([
+        'time_logs' => $results,
+        'screenshots' => $screenshots_data
+    ], 200);
+}
+?>
